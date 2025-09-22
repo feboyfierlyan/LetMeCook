@@ -29,7 +29,7 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "SPOONACULAR_API_KEY", "\"dc8fbce7425f4f21b7e85846ecb8f5c6\"")
+            buildConfigField("String", "SPOONACULAR_API_KEY", "\"x\"")
         }
     }
     compileOptions {
