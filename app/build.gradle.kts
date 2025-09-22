@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -19,7 +18,6 @@ android {
 
     buildFeatures {
         android.buildFeatures.buildConfig = true
-        viewBinding = true
     }
 
     buildTypes {
@@ -31,20 +29,16 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "SPOONACULAR_API_KEY", "\"e8c06044e6594f289ffc7af7b35cff58\"")
+            buildConfigField("String", "SPOONACULAR_API_KEY", "\"x\"")
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }
 
 dependencies {
-    implementation(libs.core.ktx)
     val room_version = "2.6.1"
 
     implementation(libs.appcompat)
@@ -56,8 +50,8 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     //import library external
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // REST API & Networking: Retrofit and OkHttp
@@ -74,11 +68,5 @@ dependencies {
 
     implementation("androidx.room:room-runtime:$room_version")
     annotationProcessor("androidx.room:room-compiler:$room_version")
-
-    implementation("androidx.core:core-ktx:1.13.1")
-
-    val nav_version = "2.7.7"
-    implementation("androidx.navigation:navigation-fragment-ktx:${nav_version}")
-    implementation("androidx.navigation:navigation-ui-ktx:${nav_version}")
 
 }
