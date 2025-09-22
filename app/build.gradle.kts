@@ -39,6 +39,7 @@ android {
 }
 
 dependencies {
+    val room_version = "2.6.1"
 
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -64,5 +65,8 @@ dependencies {
     // UI Components
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    implementation("androidx.room:room-runtime:$room_version")
+    annotationProcessor("androidx.room:room-compiler:$room_version")
 
 }

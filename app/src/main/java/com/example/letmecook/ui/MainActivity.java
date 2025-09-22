@@ -1,5 +1,6 @@
 package com.example.letmecook.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -36,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private RecipeAdapter recipeAdapter;
     private ProgressBar progressBar;
 
+    private ImageButton buttonGoToWishlist;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         buttonSearch = findViewById(R.id.buttonSearch);
         recyclerViewRecipes = findViewById(R.id.recyclerViewRecipes);
         progressBar = findViewById(R.id.progressBar);
+        buttonGoToWishlist = findViewById(R.id.buttonGoToWishlist);
 
         setupRecyclerView();
         setupTagInput();
@@ -61,6 +65,12 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Please add some ingredients first", Toast.LENGTH_SHORT).show();
             }
         });
+
+        buttonGoToWishlist.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, WishlistActivity.class);
+            startActivity(intent);
+        });
+
     }
 
     /**
