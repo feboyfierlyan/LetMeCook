@@ -17,7 +17,7 @@ import com.bumptech.glide.Glide;
 import com.example.letmecook.R;
 import com.example.letmecook.database.RecipeDao;
 import com.example.letmecook.database.WishlistRecipe;
-import com.example.letmecook.ui.RecipeDetailActivity;
+import com.example.letmecook.ui.RecipeDetailActivity; // IMPORT INI YANG DIPERLUKAN UNTUK MEMPERBAIKI ERROR
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,17 +51,18 @@ public class WishlistAdapter extends RecyclerView.Adapter<WishlistAdapter.Wishli
                 .placeholder(R.drawable.placeholder_image)
                 .into(holder.imageViewRecipe);
 
-        // Set icon to favorited state
+        // Set icon ke status sudah difavoritkan
         holder.buttonFavorite.setImageResource(R.drawable.ic_favorite_filled);
 
         holder.itemView.setOnClickListener(v -> {
+            // Baris ini sekarang akan berfungsi karena sudah di-import
             Intent intent = new Intent(context, RecipeDetailActivity.class);
             intent.putExtra("RECIPE_ID", recipe.getRecipeId());
             context.startActivity(intent);
         });
 
         holder.buttonFavorite.setOnClickListener(v -> {
-            // Remove from wishlist
+            // Hapus dari wishlist
             ExecutorService executor = Executors.newSingleThreadExecutor();
             Handler handler = new Handler(Looper.getMainLooper());
             executor.execute(() -> {

@@ -13,4 +13,10 @@ public class RecipeByIngredientResponse {
     public int getId() { return id; }
     public String getTitle() { return title; }
     public String getImage() { return image; }
+
+    public RecipeByIngredientResponse(int id, String title, String image) {
+        this.id = id;
+        this.title = title;
+        this.image = image;
+    }
 }

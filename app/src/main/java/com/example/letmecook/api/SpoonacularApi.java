@@ -1,5 +1,6 @@
 package com.example.letmecook.api;
 
+import com.example.letmecook.model.ComplexSearchResponse;
 import com.example.letmecook.model.RecipeByIngredientResponse;
 import com.example.letmecook.model.RecipeDetailsResponse;
 
@@ -22,5 +23,12 @@ public interface SpoonacularApi {
     Call<RecipeDetailsResponse> getRecipeDetails(
             @Path("id") int id,
             @Query("apiKey") String apiKey
+    );
+    @GET("recipes/complexSearch")
+
+    Call<ComplexSearchResponse> searchRecipesByCuisine(
+            @Query("apiKey") String apiKey,
+            @Query("cuisine") String cuisine,
+            @Query("number") int number
     );
 }

@@ -1,50 +1,32 @@
-package com.example.letmecook.ui;
+package com.example.letmecook.ui
 
-import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
+import com.example.letmecook.R
+import com.example.letmecook.databinding.ActivityMainBinding
 
-import com.example.letmecook.R;
-import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
+// Implementasikan interface dari HomeFragment
+class MainActivity : AppCompatActivity(), HomeFragment.OnSearchBarClickedListener {
 
-public class MainActivity extends AppCompatActivity {
+    private lateinit var binding: ActivityMainBinding
 
-    private MaterialToolbar toolbar;
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
 
-        toolbar = findViewById(R.id.toolbar);
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-
-        // Load fragment pertama (HomeFragment)
-        if (savedInstanceState == null) {
-            replaceFragment(new HomeFragment(), "Let Me Cook 🧑‍🍳");
-        }
-
-        bottomNav.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.navigation_home) {
-                replaceFragment(new HomeFragment(), "Let Me Cook 🧑‍🍳");
-                return true;
-            } else if (itemId == R.id.navigation_favorite) {
-                replaceFragment(new WishlistFragment(), "My Wishlist 🔖");
-                return true;
-            }
-            return false;
-        });
+        binding.bottomNavigation.setupWithNavController(navController)
     }
 
-    private void replaceFragment(Fragment fragment, String title) {
-        toolbar.setTitle(title);
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.nav_host_fragment, fragment);
-        fragmentTransaction.commit();
+    // Override fungsi dari interface
+    override fun onSearchBarClicked() {
+        // Aksi yang dijalankan saat search bar diklik
+        binding.bottomNavigation.selectedItemId = R.id.navigation_search
     }
 }

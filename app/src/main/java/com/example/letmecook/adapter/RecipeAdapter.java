@@ -20,6 +20,7 @@ import com.example.letmecook.database.RecipeDao;
 import com.example.letmecook.database.WishlistRecipe;
 import com.example.letmecook.model.RecipeByIngredientResponse;
 import com.example.letmecook.ui.RecipeDetailActivity;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
