@@ -5,7 +5,9 @@ import android.text.Html;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 import com.example.letmecook.BuildConfig;
@@ -23,12 +25,22 @@ import retrofit2.Response;
 public class RecipeDetailActivity extends AppCompatActivity {
     private ImageView imageViewDetail;
     private TextView textViewDetailTitle, textViewDetailSummary, textViewDetailIngredients, textViewDetailInstructions;
+    private Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_detail);
 
+        // Setup Toolbar
+        toolbar = findViewById(R.id.toolbar_detail);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+
+        // Initialize Views
         imageViewDetail = findViewById(R.id.imageViewDetail);
         textViewDetailTitle = findViewById(R.id.textViewDetailTitle);
         textViewDetailSummary = findViewById(R.id.textViewDetailSummary);
@@ -42,6 +54,13 @@ public class RecipeDetailActivity extends AppCompatActivity {
             Toast.makeText(this, "Error: Recipe ID not found.", Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+
+    // Handle back button click on toolbar
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
 
     private void fetchRecipeDetails(int recipeId) {
@@ -66,6 +85,8 @@ public class RecipeDetailActivity extends AppCompatActivity {
     }
 
     private void displayRecipeDetails(RecipeDetailsResponse recipe) {
+        toolbar.setTitle(recipe.getTitle()); // Set title on toolbar
+
         textViewDetailTitle.setText(recipe.getTitle());
         textViewDetailSummary.setText(Html.fromHtml(recipe.getSummary(), Html.FROM_HTML_MODE_COMPACT));
 

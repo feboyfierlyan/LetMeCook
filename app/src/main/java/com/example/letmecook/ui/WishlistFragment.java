@@ -3,9 +3,14 @@ package com.example.letmecook.ui;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,34 +24,38 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class WishlistActivity extends AppCompatActivity {
+public class WishlistFragment extends Fragment {
 
     private RecyclerView recyclerViewWishlist;
     private WishlistAdapter wishlistAdapter;
     private TextView textViewEmptyWishlist;
     private RecipeDao recipeDao;
 
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_wishlist);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_wishlist, container, false);
+    }
 
-        recyclerViewWishlist = findViewById(R.id.recyclerViewWishlist);
-        textViewEmptyWishlist = findViewById(R.id.textViewEmptyWishlist);
-        recipeDao = AppDatabase.getDatabase(this).recipeDao();
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        recyclerViewWishlist = view.findViewById(R.id.recyclerViewWishlist);
+        textViewEmptyWishlist = view.findViewById(R.id.textViewEmptyWishlist);
+        recipeDao = AppDatabase.getDatabase(requireContext()).recipeDao();
 
         setupRecyclerView();
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
-        loadWishlist();
+        loadWishlist(); // Muat ulang data setiap kali fragment ini ditampilkan
     }
 
     private void setupRecyclerView() {
-        recyclerViewWishlist.setLayoutManager(new LinearLayoutManager(this));
-        // Adapter akan di-set setelah data dimuat
+        recyclerViewWishlist.setLayoutManager(new LinearLayoutManager(requireContext()));
     }
 
     private void loadWishlist() {
@@ -62,7 +71,7 @@ public class WishlistActivity extends AppCompatActivity {
                 } else {
                     textViewEmptyWishlist.setVisibility(View.GONE);
                     recyclerViewWishlist.setVisibility(View.VISIBLE);
-                    wishlistAdapter = new WishlistAdapter(this, wishlist, recipeDao);
+                    wishlistAdapter = new WishlistAdapter(requireContext(), wishlist, recipeDao);
                     recyclerViewWishlist.setAdapter(wishlistAdapter);
                 }
             });
