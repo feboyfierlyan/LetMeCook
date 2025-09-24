@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.fragment.app.viewModels
 import com.example.letmecook.BuildConfig
 import com.example.letmecook.R
 import com.example.letmecook.adapter.CuisineAdapter
@@ -36,6 +37,8 @@ class HomeFragment : Fragment() {
 
     private lateinit var recommendedRecipeAdapter: RecommendedRecipeAdapter
 
+    private val homeViewModel: HomeViewModel by viewModels()
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnSearchBarClickedListener) {
@@ -60,7 +63,27 @@ class HomeFragment : Fragment() {
         }
         setupCuisineRecyclerView()
         setupRecommendedRecyclerView()
-        fetchRecommendedRecipes()
+
+        homeViewModel.fetchRecommendedRecipesIfNeeded()
+        observeViewModel()
+    }
+
+    private fun observeViewModel() {
+        // Amati perubahan pada daftar resep
+        homeViewModel.recommendedRecipes.observe(viewLifecycleOwner) { recipes ->
+            // Saat data berubah, update adapter RecyclerView
+            recommendedRecipeAdapter.updateRecipes(recipes)
+        }
+
+        // Amati perubahan pada status loading
+        homeViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBarRecommended.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+
+        // Amati jika ada pesan error
+        homeViewModel.error.observe(viewLifecycleOwner) { errorMessage ->
+            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setupCuisineRecyclerView() {
@@ -91,42 +114,6 @@ class HomeFragment : Fragment() {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = recommendedRecipeAdapter
         }
-    }
-
-    private fun fetchRecommendedRecipes() {
-        binding.progressBarRecommended.visibility = View.VISIBLE
-        val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
-        val call = apiService.getRandomRecipes(BuildConfig.SPOONACULAR_API_KEY, 10)
-
-        call.enqueue(object : Callback<RandomRecipeResponse> {
-            override fun onResponse(
-                call: Call<RandomRecipeResponse>,
-                response: Response<RandomRecipeResponse>
-            ) {
-                // FIX: Tambahkan pengecekan null di sini.
-                // Jika _binding null, berarti fragment sudah dihancurkan, jadi jangan lakukan apa-apa.
-                if (_binding == null) {
-                    return
-                }
-
-                binding.progressBarRecommended.visibility = View.GONE
-                if (response.isSuccessful && response.body() != null) {
-                    recommendedRecipeAdapter.updateRecipes(response.body()!!.recipes)
-                } else {
-                    Toast.makeText(context, "Failed to fetch recommended recipes.", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<RandomRecipeResponse>, t: Throwable) {
-                // FIX: Tambahkan pengecekan null di sini juga.
-                if (_binding == null) {
-                    return
-                }
-
-                binding.progressBarRecommended.visibility = View.GONE
-                Toast.makeText(context, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
     }
 
     override fun onDestroyView() {

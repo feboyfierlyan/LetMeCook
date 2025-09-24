@@ -31,7 +31,7 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "SPOONACULAR_API_KEY", "\"dc8fbce7425f4f21b7e85846ecb8f5c6\"")
+            buildConfigField("String", "SPOONACULAR_API_KEY", "\"83c56f0646494e179e6b0c0fd010addf\"")
         }
     }
     compileOptions {
@@ -82,4 +82,8 @@ dependencies {
     val nav_version = "2.7.7"
     implementation("androidx.navigation:navigation-fragment-ktx:${nav_version}")
     implementation("androidx.navigation:navigation-ui-ktx:${nav_version}")
+
+    val lifecycle_version = "2.8.2"
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:${lifecycle_version}")
+
 }
