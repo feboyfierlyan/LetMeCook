@@ -1,10 +1,15 @@
 package com.example.letmecook.ui
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
 import android.text.TextUtils
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
@@ -14,6 +19,7 @@ import com.example.letmecook.adapter.RecipeAdapter
 import com.example.letmecook.api.ApiClient
 import com.example.letmecook.api.SpoonacularApi
 import com.example.letmecook.databinding.FragmentSearchBinding
+import com.example.letmecook.model.AutocompleteResult
 import com.example.letmecook.model.RecipeByIngredientResponse
 import com.example.letmecook.util.SearchHistoryManager
 import com.google.android.material.chip.Chip
@@ -28,6 +34,10 @@ class SearchFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var recipeAdapter: RecipeAdapter
+    // Variabel baru untuk Autocomplete
+    private lateinit var autocompleteAdapter: ArrayAdapter<String>
+    private val handler = Handler(Looper.getMainLooper())
+    private var searchRunnable: Runnable? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,45 +50,98 @@ class SearchFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // ... (Kode lain tidak berubah)
         setupRecyclerView()
         setupTagInput()
         setupSearchButton()
         loadAndDisplayRecentSearches()
         handleBackButton()
         setupResultsToolbar()
+        // Panggil fungsi setup autocomplete baru
+        setupAutocomplete()
     }
 
-    // ... (Fungsi lain seperti setupRecyclerView, searchForRecipes, dll. tidak berubah)
+    // FUNGSI BARU: Untuk setup Autocomplete
+    private fun setupAutocomplete() {
+        autocompleteAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, mutableListOf())
+        binding.autoCompleteIngredient.setAdapter(autocompleteAdapter)
 
-    /**
-     * Memodifikasi fungsi ini untuk menambahkan ikon hapus pada chip riwayat
-     */
+        binding.autoCompleteIngredient.setOnItemClickListener { _, _, position, _ ->
+            val selected = autocompleteAdapter.getItem(position)
+            if (selected != null) {
+                addChipToGroup(selected, binding.chipGroupIngredients)
+                binding.autoCompleteIngredient.setText("")
+            }
+        }
+
+        binding.autoCompleteIngredient.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                searchRunnable?.let { handler.removeCallbacks(it) }
+            }
+            override fun afterTextChanged(s: Editable?) {
+                val query = s.toString()
+                if (query.length > 1) {
+                    searchRunnable = Runnable { fetchAutocompleteSuggestions(query) }
+                    handler.postDelayed(searchRunnable!!, 500) // Jeda 500ms sebelum panggil API
+                }
+            }
+        })
+    }
+
+    // FUNGSI BARU: Untuk memanggil API Autocomplete
+    private fun fetchAutocompleteSuggestions(query: String) {
+        val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
+        val call = apiService.autocompleteIngredients(BuildConfig.SPOONACULAR_API_KEY, query, 5)
+
+        call.enqueue(object : Callback<List<AutocompleteResult>> {
+            override fun onResponse(
+                call: Call<List<AutocompleteResult>>,
+                response: Response<List<AutocompleteResult>>
+            ) {
+                if (response.isSuccessful && response.body() != null) {
+                    val suggestions = response.body()!!.map { it.name }
+                    autocompleteAdapter.clear()
+                    autocompleteAdapter.addAll(suggestions)
+                    autocompleteAdapter.notifyDataSetChanged()
+                }
+            }
+
+            override fun onFailure(call: Call<List<AutocompleteResult>>, t: Throwable) {
+                // Biasanya tidak perlu menampilkan error untuk autocomplete
+            }
+        })
+    }
+
+    // --- Kode yang sudah ada sebelumnya ---
+
+    private fun setupTagInput() {
+        binding.textInputLayout.setEndIconOnClickListener {
+            // Ubah editTextIngredient menjadi autoCompleteIngredient
+            val ingredientText = binding.autoCompleteIngredient.text.toString().trim()
+            if (ingredientText.isNotEmpty()) {
+                addChipToGroup(ingredientText, binding.chipGroupIngredients)
+                binding.autoCompleteIngredient.setText("")
+            }
+        }
+    }
+
+    // ... (Sisa kode Anda dari `addChipToGroup` hingga `onDestroyView` tidak perlu diubah)
     private fun addChipToGroup(text: String, chipGroup: ChipGroup, isHistoryChip: Boolean = false) {
         val chip = Chip(requireContext()).apply {
             this.text = text
             this.isClickable = true
             this.isCheckable = false
-
             if (isHistoryChip) {
-                // Untuk chip riwayat, buat agar bisa ditutup (ada ikon 'x')
                 this.isCloseIconVisible = true
-
-                // Aksi saat ikon 'x' di chip riwayat diklik
                 this.setOnCloseIconClickListener {
                     val queryToRemove = (it as Chip).text.toString()
-                    // 1. Hapus dari penyimpanan (SharedPreferences)
                     SearchHistoryManager.removeSearch(requireContext(), queryToRemove)
-                    // 2. Hapus dari tampilan (UI)
                     chipGroup.removeView(it)
-                    // 3. Periksa apakah riwayat jadi kosong, jika iya, tampilkan teks
                     if (chipGroup.childCount == 0) {
                         binding.textViewEmptyHistory.visibility = View.VISIBLE
                     }
                     Toast.makeText(requireContext(), "Riwayat dihapus", Toast.LENGTH_SHORT).show()
                 }
-
-                // Aksi saat badan chip (bukan ikon 'x') diklik
                 setOnClickListener {
                     binding.chipGroupIngredients.removeAllViews()
                     text.split(",").forEach { ingredient ->
@@ -86,7 +149,6 @@ class SearchFragment : Fragment() {
                     }
                 }
             } else {
-                // Untuk chip bahan, hanya ada ikon hapus
                 this.isCloseIconVisible = true
                 setOnCloseIconClickListener { chipGroup.removeView(it) }
             }
@@ -94,8 +156,6 @@ class SearchFragment : Fragment() {
         chipGroup.addView(chip)
     }
 
-    // --- Pastikan sisa kode Anda sama seperti respons sebelumnya ---
-    // ... (sisa fungsi lainnya)
     private fun setupRecyclerView() {
         recipeAdapter = RecipeAdapter(requireContext(), mutableListOf())
         binding.recyclerViewSearchResults.layoutManager = LinearLayoutManager(requireContext())
@@ -179,16 +239,6 @@ class SearchFragment : Fragment() {
         }
     }
 
-    private fun setupTagInput() {
-        binding.textInputLayout.setEndIconOnClickListener {
-            val ingredientText = binding.editTextIngredient.text.toString().trim()
-            if (ingredientText.isNotEmpty()) {
-                addChipToGroup(ingredientText, binding.chipGroupIngredients)
-                binding.editTextIngredient.setText("")
-            }
-        }
-    }
-
     private fun getIngredientsFromChips(chipGroup: ChipGroup): String {
         return (0 until chipGroup.childCount).map {
             (chipGroup.getChildAt(it) as Chip).text.toString()
@@ -199,5 +249,4 @@ class SearchFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
 }
