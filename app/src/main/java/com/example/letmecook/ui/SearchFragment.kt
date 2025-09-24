@@ -40,6 +40,7 @@ class SearchFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // ... (Kode lain tidak berubah)
         setupRecyclerView()
         setupTagInput()
         setupSearchButton()
@@ -48,21 +49,57 @@ class SearchFragment : Fragment() {
         setupResultsToolbar()
     }
 
+    // ... (Fungsi lain seperti setupRecyclerView, searchForRecipes, dll. tidak berubah)
+
+    /**
+     * Memodifikasi fungsi ini untuk menambahkan ikon hapus pada chip riwayat
+     */
+    private fun addChipToGroup(text: String, chipGroup: ChipGroup, isHistoryChip: Boolean = false) {
+        val chip = Chip(requireContext()).apply {
+            this.text = text
+            this.isClickable = true
+            this.isCheckable = false
+
+            if (isHistoryChip) {
+                // Untuk chip riwayat, buat agar bisa ditutup (ada ikon 'x')
+                this.isCloseIconVisible = true
+
+                // Aksi saat ikon 'x' di chip riwayat diklik
+                this.setOnCloseIconClickListener {
+                    val queryToRemove = (it as Chip).text.toString()
+                    // 1. Hapus dari penyimpanan (SharedPreferences)
+                    SearchHistoryManager.removeSearch(requireContext(), queryToRemove)
+                    // 2. Hapus dari tampilan (UI)
+                    chipGroup.removeView(it)
+                    // 3. Periksa apakah riwayat jadi kosong, jika iya, tampilkan teks
+                    if (chipGroup.childCount == 0) {
+                        binding.textViewEmptyHistory.visibility = View.VISIBLE
+                    }
+                    Toast.makeText(requireContext(), "Riwayat dihapus", Toast.LENGTH_SHORT).show()
+                }
+
+                // Aksi saat badan chip (bukan ikon 'x') diklik
+                setOnClickListener {
+                    binding.chipGroupIngredients.removeAllViews()
+                    text.split(",").forEach { ingredient ->
+                        addChipToGroup(ingredient, binding.chipGroupIngredients)
+                    }
+                }
+            } else {
+                // Untuk chip bahan, hanya ada ikon hapus
+                this.isCloseIconVisible = true
+                setOnCloseIconClickListener { chipGroup.removeView(it) }
+            }
+        }
+        chipGroup.addView(chip)
+    }
+
+    // --- Pastikan sisa kode Anda sama seperti respons sebelumnya ---
+    // ... (sisa fungsi lainnya)
     private fun setupRecyclerView() {
-        // Kita menggunakan RecipeAdapter (Java) yang sudah ada
         recipeAdapter = RecipeAdapter(requireContext(), mutableListOf())
         binding.recyclerViewSearchResults.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewSearchResults.adapter = recipeAdapter
-    }
-
-    private fun setupTagInput() {
-        binding.textInputLayout.setEndIconOnClickListener {
-            val ingredientText = binding.editTextIngredient.text.toString().trim()
-            if (ingredientText.isNotEmpty()) {
-                addChipToGroup(ingredientText, binding.chipGroupIngredients)
-                binding.editTextIngredient.setText("")
-            }
-        }
     }
 
     private fun setupSearchButton() {
@@ -88,12 +125,10 @@ class SearchFragment : Fragment() {
         binding.buttonSearch.visibility = View.GONE
         binding.resultsContainer.visibility = View.VISIBLE
         binding.progressBarSearch.visibility = View.VISIBLE
-
         val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
         val call = apiService.searchRecipesByIngredients(
             BuildConfig.SPOONACULAR_API_KEY, ingredients, 20
         )
-
         call.enqueue(object : Callback<List<RecipeByIngredientResponse>> {
             override fun onResponse(
                 call: Call<List<RecipeByIngredientResponse>>,
@@ -106,7 +141,6 @@ class SearchFragment : Fragment() {
                     Toast.makeText(requireContext(), "No recipes found. Try different ingredients.", Toast.LENGTH_LONG).show()
                 }
             }
-
             override fun onFailure(call: Call<List<RecipeByIngredientResponse>>, t: Throwable) {
                 binding.progressBarSearch.visibility = View.GONE
                 Toast.makeText(requireContext(), "Network Error: " + t.message, Toast.LENGTH_LONG).show()
@@ -145,22 +179,14 @@ class SearchFragment : Fragment() {
         }
     }
 
-    private fun addChipToGroup(text: String, chipGroup: ChipGroup, isHistoryChip: Boolean = false) {
-        val chip = Chip(requireContext()).apply {
-            this.text = text; isClickable = true; isCheckable = false
-            if (isHistoryChip) {
-                setOnClickListener {
-                    binding.chipGroupIngredients.removeAllViews()
-                    text.split(",").forEach { ingredient ->
-                        addChipToGroup(ingredient, binding.chipGroupIngredients)
-                    }
-                }
-            } else {
-                isCloseIconVisible = true
-                setOnCloseIconClickListener { chipGroup.removeView(it) }
+    private fun setupTagInput() {
+        binding.textInputLayout.setEndIconOnClickListener {
+            val ingredientText = binding.editTextIngredient.text.toString().trim()
+            if (ingredientText.isNotEmpty()) {
+                addChipToGroup(ingredientText, binding.chipGroupIngredients)
+                binding.editTextIngredient.setText("")
             }
         }
-        chipGroup.addView(chip)
     }
 
     private fun getIngredientsFromChips(chipGroup: ChipGroup): String {
@@ -173,4 +199,5 @@ class SearchFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
 }
