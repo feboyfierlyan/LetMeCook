@@ -5,14 +5,25 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.letmecook.BuildConfig
 import com.example.letmecook.R
 import com.example.letmecook.adapter.CuisineAdapter
+import com.example.letmecook.adapter.RecommendedRecipeAdapter
+import com.example.letmecook.api.ApiClient
+import com.example.letmecook.api.SpoonacularApi
 import com.example.letmecook.databinding.FragmentHomeBinding
 import com.example.letmecook.model.Cuisine
+import com.example.letmecook.model.RandomRecipeResponse
+import com.example.letmecook.model.Recipe
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class HomeFragment : Fragment() {
 
@@ -23,6 +34,8 @@ class HomeFragment : Fragment() {
     private var listener: OnSearchBarClickedListener? = null
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+
+    private lateinit var recommendedRecipeAdapter : RecommendedRecipeAdapter
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -49,6 +62,8 @@ class HomeFragment : Fragment() {
         }
 
         setupCuisineRecyclerView()
+        setupRecommendedRecyclerView()
+        fetchRecommendedRecipes()
     }
 
     private fun setupCuisineRecyclerView() {
@@ -75,6 +90,39 @@ class HomeFragment : Fragment() {
             layoutManager = GridLayoutManager(context, spanCount)
             adapter = cuisineAdapter
         }
+    }
+
+    private fun setupRecommendedRecyclerView() {
+        recommendedRecipeAdapter = RecommendedRecipeAdapter(emptyList())
+        binding.recyclerViewRecommended.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = recommendedRecipeAdapter
+        }
+    }
+
+    private fun fetchRecommendedRecipes() {
+        binding.progressBarRecommended.visibility = View.VISIBLE
+        val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
+        val call = apiService.getRandomRecipes(BuildConfig.SPOONACULAR_API_KEY, 10) // Ambil 10 resep
+
+        call.enqueue(object : Callback<RandomRecipeResponse> {
+            override fun onResponse(
+                call: Call<RandomRecipeResponse>,
+                response: Response<RandomRecipeResponse>
+            ) {
+                binding.progressBarRecommended.visibility = View.GONE
+                if (response.isSuccessful && response.body() != null) {
+                    recommendedRecipeAdapter.updateRecipes(response.body()!!.recipes)
+                } else {
+                    Toast.makeText(context, "Failed to fetch recommended recipes.", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<RandomRecipeResponse>, t: Throwable) {
+                binding.progressBarRecommended.visibility = View.GONE
+                Toast.makeText(context, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     override fun onDestroyView() {

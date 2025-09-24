@@ -4,6 +4,8 @@ import com.example.letmecook.model.ComplexSearchResponse;
 import com.example.letmecook.model.RecipeByIngredientResponse;
 import com.example.letmecook.model.RecipeDetailsResponse;
 
+import com.example.letmecook.model.RandomRecipeResponse;
+
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -30,5 +32,11 @@ public interface SpoonacularApi {
             @Query("apiKey") String apiKey,
             @Query("cuisine") String cuisine,
             @Query("number") int number
+    );
+
+    @GET("recipes/random")
+    Call<RandomRecipeResponse> getRandomRecipes(
+            @Query("apiKey") String apiKey,
+            @Query("number") int number // Jumlah resep yang ingin didapat
     );
 }
