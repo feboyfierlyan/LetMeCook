@@ -15,11 +15,11 @@ object CuisineRepository {
             Cuisine("Japanese", R.drawable.image_japanese),
             Cuisine("French", R.drawable.image_french),
             Cuisine("Spanish", R.drawable.image_spanish),
-            Cuisine("American", R.drawable.placeholder_image),
-            Cuisine("Thai", R.drawable.placeholder_image),
-            Cuisine("Vietnamese", R.drawable.placeholder_image),
-            Cuisine("Korean", R.drawable.placeholder_image),
-            Cuisine("German", R.drawable.placeholder_image)
+            Cuisine("American", R.drawable.image_american),
+            Cuisine("Thai", R.drawable.image_thai),
+            Cuisine("Vietnamese", R.drawable.image_viatnamese),
+            Cuisine("Korean", R.drawable.image_korean),
+            Cuisine("German", R.drawable.image_german)
             // Tambahkan masakan lain & ganti placeholder dengan gambar Anda
         )
     }

@@ -34,7 +34,6 @@ class SearchFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var recipeAdapter: RecipeAdapter
-    // Variabel baru untuk Autocomplete
     private lateinit var autocompleteAdapter: ArrayAdapter<String>
     private val handler = Handler(Looper.getMainLooper())
     private var searchRunnable: Runnable? = null
@@ -49,111 +48,13 @@ class SearchFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupRecyclerView()
         setupTagInput()
         setupSearchButton()
         loadAndDisplayRecentSearches()
         handleBackButton()
         setupResultsToolbar()
-        // Panggil fungsi setup autocomplete baru
         setupAutocomplete()
-    }
-
-    // FUNGSI BARU: Untuk setup Autocomplete
-    private fun setupAutocomplete() {
-        autocompleteAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, mutableListOf())
-        binding.autoCompleteIngredient.setAdapter(autocompleteAdapter)
-
-        binding.autoCompleteIngredient.setOnItemClickListener { _, _, position, _ ->
-            val selected = autocompleteAdapter.getItem(position)
-            if (selected != null) {
-                addChipToGroup(selected, binding.chipGroupIngredients)
-                binding.autoCompleteIngredient.setText("")
-            }
-        }
-
-        binding.autoCompleteIngredient.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                searchRunnable?.let { handler.removeCallbacks(it) }
-            }
-            override fun afterTextChanged(s: Editable?) {
-                val query = s.toString()
-                if (query.length > 1) {
-                    searchRunnable = Runnable { fetchAutocompleteSuggestions(query) }
-                    handler.postDelayed(searchRunnable!!, 500) // Jeda 500ms sebelum panggil API
-                }
-            }
-        })
-    }
-
-    // FUNGSI BARU: Untuk memanggil API Autocomplete
-    private fun fetchAutocompleteSuggestions(query: String) {
-        val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
-        val call = apiService.autocompleteIngredients(BuildConfig.SPOONACULAR_API_KEY, query, 5)
-
-        call.enqueue(object : Callback<List<AutocompleteResult>> {
-            override fun onResponse(
-                call: Call<List<AutocompleteResult>>,
-                response: Response<List<AutocompleteResult>>
-            ) {
-                if (response.isSuccessful && response.body() != null) {
-                    val suggestions = response.body()!!.map { it.name }
-                    autocompleteAdapter.clear()
-                    autocompleteAdapter.addAll(suggestions)
-                    autocompleteAdapter.notifyDataSetChanged()
-                }
-            }
-
-            override fun onFailure(call: Call<List<AutocompleteResult>>, t: Throwable) {
-                // Biasanya tidak perlu menampilkan error untuk autocomplete
-            }
-        })
-    }
-
-    // --- Kode yang sudah ada sebelumnya ---
-
-    private fun setupTagInput() {
-        binding.textInputLayout.setEndIconOnClickListener {
-            // Ubah editTextIngredient menjadi autoCompleteIngredient
-            val ingredientText = binding.autoCompleteIngredient.text.toString().trim()
-            if (ingredientText.isNotEmpty()) {
-                addChipToGroup(ingredientText, binding.chipGroupIngredients)
-                binding.autoCompleteIngredient.setText("")
-            }
-        }
-    }
-
-    // ... (Sisa kode Anda dari `addChipToGroup` hingga `onDestroyView` tidak perlu diubah)
-    private fun addChipToGroup(text: String, chipGroup: ChipGroup, isHistoryChip: Boolean = false) {
-        val chip = Chip(requireContext()).apply {
-            this.text = text
-            this.isClickable = true
-            this.isCheckable = false
-            if (isHistoryChip) {
-                this.isCloseIconVisible = true
-                this.setOnCloseIconClickListener {
-                    val queryToRemove = (it as Chip).text.toString()
-                    SearchHistoryManager.removeSearch(requireContext(), queryToRemove)
-                    chipGroup.removeView(it)
-                    if (chipGroup.childCount == 0) {
-                        binding.textViewEmptyHistory.visibility = View.VISIBLE
-                    }
-                    Toast.makeText(requireContext(), "Riwayat dihapus", Toast.LENGTH_SHORT).show()
-                }
-                setOnClickListener {
-                    binding.chipGroupIngredients.removeAllViews()
-                    text.split(",").forEach { ingredient ->
-                        addChipToGroup(ingredient, binding.chipGroupIngredients)
-                    }
-                }
-            } else {
-                this.isCloseIconVisible = true
-                setOnCloseIconClickListener { chipGroup.removeView(it) }
-            }
-        }
-        chipGroup.addView(chip)
     }
 
     private fun setupRecyclerView() {
@@ -174,17 +75,15 @@ class SearchFragment : Fragment() {
         }
     }
 
-    private fun setupResultsToolbar() {
-        binding.toolbarResults.setNavigationOnClickListener {
-            showSearchForm()
-        }
-    }
-
     private fun searchForRecipes(ingredients: String) {
+        // SEMBUNYIKAN Wajah #1 (Form Pencarian)
         binding.scrollView.visibility = View.GONE
         binding.buttonSearch.visibility = View.GONE
+
+        // TAMPILKAN Wajah #2 (Hasil Pencarian)
         binding.resultsContainer.visibility = View.VISIBLE
         binding.progressBarSearch.visibility = View.VISIBLE
+
         val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
         val call = apiService.searchRecipesByIngredients(
             BuildConfig.SPOONACULAR_API_KEY, ingredients, 20
@@ -195,7 +94,7 @@ class SearchFragment : Fragment() {
                 response: Response<List<RecipeByIngredientResponse>>
             ) {
                 binding.progressBarSearch.visibility = View.GONE
-                if (response.isSuccessful && response.body() != null && response.body()!!.isNotEmpty()) {
+                if (response.isSuccessful && response.body() != null && !response.body()!!.isEmpty()) {
                     recipeAdapter.updateRecipes(response.body())
                 } else {
                     Toast.makeText(requireContext(), "No recipes found. Try different ingredients.", Toast.LENGTH_LONG).show()
@@ -206,6 +105,18 @@ class SearchFragment : Fragment() {
                 Toast.makeText(requireContext(), "Network Error: " + t.message, Toast.LENGTH_LONG).show()
             }
         })
+    }
+
+    // Fungsi untuk kembali ke form pencarian
+    private fun showSearchForm() {
+        // TAMPILKAN KEMBALI Wajah #1
+        binding.scrollView.visibility = View.VISIBLE
+        binding.buttonSearch.visibility = View.VISIBLE
+        // SEMBUNYIKAN Wajah #2
+        binding.resultsContainer.visibility = View.GONE
+        // Kosongkan hasil resep sebelumnya
+        recipeAdapter.updateRecipes(emptyList())
+        loadAndDisplayRecentSearches()
     }
 
     private fun handleBackButton() {
@@ -222,12 +133,65 @@ class SearchFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
     }
 
-    private fun showSearchForm() {
-        binding.resultsContainer.visibility = View.GONE
-        binding.scrollView.visibility = View.VISIBLE
-        binding.buttonSearch.visibility = View.VISIBLE
-        recipeAdapter.updateRecipes(emptyList())
-        loadAndDisplayRecentSearches()
+    private fun setupResultsToolbar() {
+        binding.toolbarResults.setNavigationOnClickListener {
+            showSearchForm()
+        }
+    }
+
+    // --- Sisa kode untuk Autocomplete dan Tag (tidak berubah) ---
+    private fun setupAutocomplete() {
+        autocompleteAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, mutableListOf())
+        binding.autoCompleteIngredient.setAdapter(autocompleteAdapter)
+        binding.autoCompleteIngredient.setOnItemClickListener { _, _, position, _ ->
+            val selected = autocompleteAdapter.getItem(position)
+            if (selected != null) {
+                addChipToGroup(selected, binding.chipGroupIngredients)
+                binding.autoCompleteIngredient.setText("")
+            }
+        }
+        binding.autoCompleteIngredient.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                searchRunnable?.let { handler.removeCallbacks(it) }
+            }
+            override fun afterTextChanged(s: Editable?) {
+                val query = s.toString()
+                if (query.length > 1) {
+                    searchRunnable = Runnable { fetchAutocompleteSuggestions(query) }
+                    handler.postDelayed(searchRunnable!!, 500)
+                }
+            }
+        })
+    }
+
+    private fun fetchAutocompleteSuggestions(query: String) {
+        val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
+        val call = apiService.autocompleteIngredients(BuildConfig.SPOONACULAR_API_KEY, query, 5)
+        call.enqueue(object : Callback<List<AutocompleteResult>> {
+            override fun onResponse(
+                call: Call<List<AutocompleteResult>>,
+                response: Response<List<AutocompleteResult>>
+            ) {
+                if (isAdded && response.isSuccessful && response.body() != null) {
+                    val suggestions = response.body()!!.map { it.name }
+                    autocompleteAdapter.clear()
+                    autocompleteAdapter.addAll(suggestions)
+                    autocompleteAdapter.notifyDataSetChanged()
+                }
+            }
+            override fun onFailure(call: Call<List<AutocompleteResult>>, t: Throwable) {}
+        })
+    }
+
+    private fun setupTagInput() {
+        binding.textInputLayout.setEndIconOnClickListener {
+            val ingredientText = binding.autoCompleteIngredient.text.toString().trim()
+            if (ingredientText.isNotEmpty()) {
+                addChipToGroup(ingredientText, binding.chipGroupIngredients)
+                binding.autoCompleteIngredient.setText("")
+            }
+        }
     }
 
     private fun loadAndDisplayRecentSearches() {
@@ -237,6 +201,34 @@ class SearchFragment : Fragment() {
         history.forEach { query ->
             addChipToGroup(query, binding.chipGroupRecentSearches, isHistoryChip = true)
         }
+    }
+
+    private fun addChipToGroup(text: String, chipGroup: ChipGroup, isHistoryChip: Boolean = false) {
+        val chip = Chip(requireContext()).apply {
+            this.text = text; isClickable = true; isCheckable = false
+            if (isHistoryChip) {
+                this.isCloseIconVisible = true
+                setOnCloseIconClickListener {
+                    val queryToRemove = (it as Chip).text.toString()
+                    SearchHistoryManager.removeSearch(requireContext(), queryToRemove)
+                    chipGroup.removeView(it)
+                    if (chipGroup.childCount == 0) {
+                        binding.textViewEmptyHistory.visibility = View.VISIBLE
+                    }
+                    Toast.makeText(requireContext(), "Riwayat dihapus", Toast.LENGTH_SHORT).show()
+                }
+                setOnClickListener {
+                    binding.chipGroupIngredients.removeAllViews()
+                    text.split(",").forEach { ingredient ->
+                        addChipToGroup(ingredient, binding.chipGroupIngredients)
+                    }
+                }
+            } else {
+                isCloseIconVisible = true
+                setOnCloseIconClickListener { chipGroup.removeView(it) }
+            }
+        }
+        chipGroup.addView(chip)
     }
 
     private fun getIngredientsFromChips(chipGroup: ChipGroup): String {
