@@ -20,7 +20,6 @@ import com.example.letmecook.api.SpoonacularApi
 import com.example.letmecook.databinding.FragmentHomeBinding
 import com.example.letmecook.model.Cuisine
 import com.example.letmecook.model.RandomRecipeResponse
-import com.example.letmecook.model.Recipe
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -33,9 +32,9 @@ class HomeFragment : Fragment() {
 
     private var listener: OnSearchBarClickedListener? = null
     private var _binding: FragmentHomeBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding!! // Perhatikan '!!', ini yang menyebabkan error jika _binding null
 
-    private lateinit var recommendedRecipeAdapter : RecommendedRecipeAdapter
+    private lateinit var recommendedRecipeAdapter: RecommendedRecipeAdapter
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -56,11 +55,9 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         binding.searchBarCard.setOnClickListener {
             listener?.onSearchBarClicked()
         }
-
         setupCuisineRecyclerView()
         setupRecommendedRecyclerView()
         fetchRecommendedRecipes()
@@ -77,15 +74,11 @@ class HomeFragment : Fragment() {
             Cuisine("Spanish", R.drawable.image_spanish),
             Cuisine("American", R.drawable.image_american)
         )
-
         val cuisineAdapter = CuisineAdapter(cuisines) { selectedCuisine ->
             val bundle = bundleOf("cuisine_name" to selectedCuisine.name)
             findNavController().navigate(R.id.action_homeFragment_to_recipeListFragment, bundle)
         }
-
         binding.recyclerViewCuisines.apply {
-            // FIX: Ganti LinearLayoutManager dengan GridLayoutManager
-            // Angka '4' adalah jumlah kolom. Anda bisa mengubahnya sesuai selera.
             val spanCount = 4
             layoutManager = GridLayoutManager(context, spanCount)
             adapter = cuisineAdapter
@@ -103,13 +96,19 @@ class HomeFragment : Fragment() {
     private fun fetchRecommendedRecipes() {
         binding.progressBarRecommended.visibility = View.VISIBLE
         val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
-        val call = apiService.getRandomRecipes(BuildConfig.SPOONACULAR_API_KEY, 10) // Ambil 10 resep
+        val call = apiService.getRandomRecipes(BuildConfig.SPOONACULAR_API_KEY, 10)
 
         call.enqueue(object : Callback<RandomRecipeResponse> {
             override fun onResponse(
                 call: Call<RandomRecipeResponse>,
                 response: Response<RandomRecipeResponse>
             ) {
+                // FIX: Tambahkan pengecekan null di sini.
+                // Jika _binding null, berarti fragment sudah dihancurkan, jadi jangan lakukan apa-apa.
+                if (_binding == null) {
+                    return
+                }
+
                 binding.progressBarRecommended.visibility = View.GONE
                 if (response.isSuccessful && response.body() != null) {
                     recommendedRecipeAdapter.updateRecipes(response.body()!!.recipes)
@@ -119,6 +118,11 @@ class HomeFragment : Fragment() {
             }
 
             override fun onFailure(call: Call<RandomRecipeResponse>, t: Throwable) {
+                // FIX: Tambahkan pengecekan null di sini juga.
+                if (_binding == null) {
+                    return
+                }
+
                 binding.progressBarRecommended.visibility = View.GONE
                 Toast.makeText(context, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
@@ -127,6 +131,7 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // _binding di-set null di sini, yang menyebabkan crash jika API merespons setelah ini.
         _binding = null
     }
 
