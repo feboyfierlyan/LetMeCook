@@ -61,23 +61,42 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <TextView
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Cuisines"
-            android:textAppearance="@style/TextAppearance.App.TitleLarge"
-            android:textColor="@color/text_primary_light" />
+            android:layout_marginTop="24dp">
 
+            <TextView
+                android:id="@+id/title_cuisines"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cuisines"
+                android:textAppearance="@style/TextAppearance.App.TitleLarge"
+                android:textColor="@color/text_primary_light"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/text_view_see_all_cuisines"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp"
+                android:text="Lihat Semua"
+                android:textAppearance="@style/TextAppearance.App.LabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_cuisines"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:clipToPadding="false"
-            android:orientation="horizontal"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/item_cuisine" />
+            android:layout_marginTop="12dp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -97,9 +116,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:clipToPadding="false"
-                android:orientation="horizontal"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:listitem="@layout/item_recipe_card_recommended" />
+                android:orientation="horizontal" />
 
             <ProgressBar
                 android:id="@+id/progress_bar_recommended"

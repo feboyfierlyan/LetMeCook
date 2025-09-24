@@ -8,22 +8,16 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.fragment.app.viewModels
-import com.example.letmecook.BuildConfig
 import com.example.letmecook.R
 import com.example.letmecook.adapter.CuisineAdapter
 import com.example.letmecook.adapter.RecommendedRecipeAdapter
-import com.example.letmecook.api.ApiClient
-import com.example.letmecook.api.SpoonacularApi
+import com.example.letmecook.data.CuisineRepository
 import com.example.letmecook.databinding.FragmentHomeBinding
 import com.example.letmecook.model.Cuisine
-import com.example.letmecook.model.RandomRecipeResponse
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class HomeFragment : Fragment() {
 
@@ -33,11 +27,11 @@ class HomeFragment : Fragment() {
 
     private var listener: OnSearchBarClickedListener? = null
     private var _binding: FragmentHomeBinding? = null
-    private val binding get() = _binding!! // Perhatikan '!!', ini yang menyebabkan error jika _binding null
+    private val binding get() = _binding!!
 
-    private lateinit var recommendedRecipeAdapter: RecommendedRecipeAdapter
-
+    // Inisialisasi ViewModel. Logika API akan ada di sini.
     private val homeViewModel: HomeViewModel by viewModels()
+    private lateinit var recommendedRecipeAdapter: RecommendedRecipeAdapter
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -58,45 +52,40 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         binding.searchBarCard.setOnClickListener {
             listener?.onSearchBarClicked()
         }
+        binding.textViewSeeAllCuisines.setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_allCuisinesFragment)
+        }
+
         setupCuisineRecyclerView()
         setupRecommendedRecyclerView()
 
+        // Minta data dari ViewModel, BUKAN panggil API langsung
         homeViewModel.fetchRecommendedRecipesIfNeeded()
+
+        // "Amati" perubahan data dari ViewModel
         observeViewModel()
     }
 
     private fun observeViewModel() {
-        // Amati perubahan pada daftar resep
         homeViewModel.recommendedRecipes.observe(viewLifecycleOwner) { recipes ->
-            // Saat data berubah, update adapter RecyclerView
             recommendedRecipeAdapter.updateRecipes(recipes)
         }
-
-        // Amati perubahan pada status loading
         homeViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBarRecommended.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
-
-        // Amati jika ada pesan error
         homeViewModel.error.observe(viewLifecycleOwner) { errorMessage ->
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun setupCuisineRecyclerView() {
-        val cuisines = listOf(
-            Cuisine("Italian", R.drawable.image_italian),
-            Cuisine("Chinese", R.drawable.image_chinese),
-            Cuisine("Mexican", R.drawable.image_mexican),
-            Cuisine("Indian", R.drawable.image_indian),
-            Cuisine("Japanese", R.drawable.image_japanese),
-            Cuisine("French", R.drawable.image_french),
-            Cuisine("Spanish", R.drawable.image_spanish),
-            Cuisine("American", R.drawable.image_american)
-        )
+        // Mengambil data dari Repository, menampilkan 8 item pertama
+        val cuisines = CuisineRepository.getAllCuisines().take(8)
+
         val cuisineAdapter = CuisineAdapter(cuisines) { selectedCuisine ->
             val bundle = bundleOf("cuisine_name" to selectedCuisine.name)
             findNavController().navigate(R.id.action_homeFragment_to_recipeListFragment, bundle)
@@ -116,9 +105,11 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // FUNGSI fetchRecommendedRecipes() SUDAH DIHAPUS DARI SINI
+    // KARENA LOGIKANYA SUDAH PINDAH KE HomeViewModel
+
     override fun onDestroyView() {
         super.onDestroyView()
-        // _binding di-set null di sini, yang menyebabkan crash jika API merespons setelah ini.
         _binding = null
     }
 

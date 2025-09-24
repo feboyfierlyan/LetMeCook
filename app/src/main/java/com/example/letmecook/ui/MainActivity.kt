@@ -7,7 +7,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.letmecook.R
 import com.example.letmecook.databinding.ActivityMainBinding
 
-// Implementasikan interface dari HomeFragment
 class MainActivity : AppCompatActivity(), HomeFragment.OnSearchBarClickedListener {
 
     private lateinit var binding: ActivityMainBinding
@@ -21,12 +20,11 @@ class MainActivity : AppCompatActivity(), HomeFragment.OnSearchBarClickedListene
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHostFragment.navController
 
+        // Baris ini akan bekerja dengan benar jika ID di menu dan nav_graph sudah cocok
         binding.bottomNavigation.setupWithNavController(navController)
     }
 
-    // Override fungsi dari interface
     override fun onSearchBarClicked() {
-        // Aksi yang dijalankan saat search bar diklik
         binding.bottomNavigation.selectedItemId = R.id.navigation_search
     }
 }

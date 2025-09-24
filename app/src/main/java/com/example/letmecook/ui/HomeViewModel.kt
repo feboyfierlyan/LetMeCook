@@ -14,22 +14,16 @@ import retrofit2.Response
 
 class HomeViewModel : ViewModel() {
 
-    // Gunakan LiveData untuk menyimpan daftar resep.
-    // UI (Fragment) akan "mengamati" perubahan pada data ini.
     private val _recommendedRecipes = MutableLiveData<List<Recipe>>()
     val recommendedRecipes: LiveData<List<Recipe>> = _recommendedRecipes
 
-    // LiveData untuk status loading
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    // LiveData untuk pesan error
     private val _error = MutableLiveData<String>()
     val error: LiveData<String> = _error
 
-    // Fungsi ini akan dipanggil dari Fragment.
     fun fetchRecommendedRecipesIfNeeded() {
-        // HANYA panggil API jika daftar resep masih kosong.
         if (_recommendedRecipes.value.isNullOrEmpty()) {
             fetchFromApi()
         }
@@ -47,7 +41,6 @@ class HomeViewModel : ViewModel() {
             ) {
                 _isLoading.value = false
                 if (response.isSuccessful && response.body() != null) {
-                    // Jika berhasil, update nilai LiveData.
                     _recommendedRecipes.value = response.body()!!.recipes
                 } else {
                     _error.value = "Failed to fetch recommended recipes."
