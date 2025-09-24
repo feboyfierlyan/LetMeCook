@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.letmecook.R
 import com.example.letmecook.adapter.CuisineAdapter
 import com.example.letmecook.databinding.FragmentHomeBinding
@@ -16,7 +16,6 @@ import com.example.letmecook.model.Cuisine
 
 class HomeFragment : Fragment() {
 
-    // Interface untuk komunikasi dengan MainActivity (tidak berubah)
     interface OnSearchBarClickedListener {
         fun onSearchBarClicked()
     }
@@ -49,33 +48,31 @@ class HomeFragment : Fragment() {
             listener?.onSearchBarClicked()
         }
 
-        // FIX: Panggil fungsi untuk menampilkan daftar masakan
         setupCuisineRecyclerView()
     }
 
-    /**
-     * Fungsi untuk menyiapkan data masakan dan menampilkannya di RecyclerView.
-     */
     private fun setupCuisineRecyclerView() {
-        // Anda bisa mengganti placeholder_image dengan gambar yang sudah Anda siapkan
         val cuisines = listOf(
-            Cuisine("Italian", R.drawable.placeholder_image),
-            Cuisine("Chinese", R.drawable.placeholder_image),
-            Cuisine("Mexican", R.drawable.placeholder_image),
-            Cuisine("Indian", R.drawable.placeholder_image),
-            Cuisine("Japanese", R.drawable.placeholder_image),
-            Cuisine("French", R.drawable.placeholder_image),
-            Cuisine("American", R.drawable.placeholder_image)
+            Cuisine("Italian", R.drawable.image_italian),
+            Cuisine("Chinese", R.drawable.image_chinese),
+            Cuisine("Mexican", R.drawable.image_mexican),
+            Cuisine("Indian", R.drawable.image_indian),
+            Cuisine("Japanese", R.drawable.image_japanese),
+            Cuisine("French", R.drawable.image_french),
+            Cuisine("Spanish", R.drawable.image_spanish),
+            Cuisine("American", R.drawable.image_american)
         )
 
         val cuisineAdapter = CuisineAdapter(cuisines) { selectedCuisine ->
-            // Aksi saat item masakan di-klik: Pindah ke RecipeListFragment
             val bundle = bundleOf("cuisine_name" to selectedCuisine.name)
             findNavController().navigate(R.id.action_homeFragment_to_recipeListFragment, bundle)
         }
 
         binding.recyclerViewCuisines.apply {
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            // FIX: Ganti LinearLayoutManager dengan GridLayoutManager
+            // Angka '4' adalah jumlah kolom. Anda bisa mengubahnya sesuai selera.
+            val spanCount = 4
+            layoutManager = GridLayoutManager(context, spanCount)
             adapter = cuisineAdapter
         }
     }
