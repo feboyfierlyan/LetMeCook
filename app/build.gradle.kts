@@ -86,4 +86,5 @@ dependencies {
     val lifecycle_version = "2.8.2"
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:${lifecycle_version}")
 
+    implementation("com.facebook.shimmer:shimmer:0.5.0") // efek shimmering
 }

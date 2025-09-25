@@ -2,29 +2,42 @@ package com.example.letmecook.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.example.letmecook.R;
-import com.example.letmecook.model.Recipe; // UBAH IMPORT INI
+import com.example.letmecook.database.AppDatabase;
+import com.example.letmecook.database.RecipeDao;
+import com.example.letmecook.database.WishlistRecipe;
+import com.example.letmecook.model.Recipe;
 import com.example.letmecook.ui.RecipeDetailActivity;
+
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-// GANTI TIPE DATA LIST MENJADI Recipe
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
     private List<Recipe> recipeList;
     private Context context;
+    private RecipeDao recipeDao; // DAO untuk interaksi database
 
     public RecipeAdapter(Context context, List<Recipe> recipeList) {
         this.context = context;
         this.recipeList = recipeList;
+        // Inisialisasi DAO dari database
+        this.recipeDao = AppDatabase.getDatabase(context).recipeDao();
     }
 
     @NonNull
@@ -39,13 +52,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         Recipe recipe = recipeList.get(position);
         holder.textViewTitle.setText(recipe.getTitle());
 
-        // Gunakan getter dari data class Kotlin
+        // Menampilkan detail waktu dan rating
         holder.textViewCookingTime.setText(recipe.getReadyInMinutes() + " min");
-
         double ratingValue = recipe.getSpoonacularScore() / 20.0;
         DecimalFormat df = new DecimalFormat("#.#");
         String formattedRating = df.format(ratingValue);
-
         String likes = recipe.getAggregateLikes() > 1000
                 ? (recipe.getAggregateLikes() / 1000) + "rb+ rating"
                 : recipe.getAggregateLikes() + " rating";
@@ -62,7 +73,54 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             context.startActivity(intent);
         });
 
-        // Logika untuk tombol favorit tidak berubah
+        // --- LOGIKA BARU UNTUK TOMBOL FAVORIT ---
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        // Cek status favorit saat kartu ditampilkan
+        executor.execute(() -> {
+            WishlistRecipe existingRecipe = recipeDao.getWishlistRecipeById(recipe.getId());
+            handler.post(() -> {
+                if (existingRecipe != null) {
+                    holder.buttonFavorite.setImageResource(R.drawable.ic_favorite_filled);
+                    holder.buttonFavorite.setTag("favorited");
+                } else {
+                    holder.buttonFavorite.setImageResource(R.drawable.ic_favorite_border);
+                    holder.buttonFavorite.setTag("unfavorited");
+                }
+            });
+        });
+
+        // Tambahkan listener untuk klik tombol favorit
+        holder.buttonFavorite.setOnClickListener(v -> {
+            executor.execute(() -> {
+                if ("unfavorited".equals(holder.buttonFavorite.getTag())) {
+                    // Tambahkan ke wishlist
+                    WishlistRecipe newWish = new WishlistRecipe();
+                    newWish.setRecipeId(recipe.getId());
+                    newWish.setTitle(recipe.getTitle());
+                    newWish.setImageUrl(recipe.getImage());
+                    recipeDao.insert(newWish);
+
+                    handler.post(() -> {
+                        holder.buttonFavorite.setImageResource(R.drawable.ic_favorite_filled);
+                        holder.buttonFavorite.setTag("favorited");
+                        Toast.makeText(context, "Added to Wishlist", Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    // Hapus dari wishlist
+                    WishlistRecipe toDelete = recipeDao.getWishlistRecipeById(recipe.getId());
+                    if (toDelete != null) {
+                        recipeDao.delete(toDelete);
+                    }
+                    handler.post(() -> {
+                        holder.buttonFavorite.setImageResource(R.drawable.ic_favorite_border);
+                        holder.buttonFavorite.setTag("unfavorited");
+                        Toast.makeText(context, "Removed from Wishlist", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
+        });
     }
 
     @Override
@@ -70,7 +128,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         return recipeList.size();
     }
 
-    // GANTI TIPE DATA LIST MENJADI Recipe
     public void updateRecipes(List<Recipe> newRecipes) {
         if (newRecipes != null) {
             this.recipeList.clear();
@@ -85,7 +142,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         ImageButton buttonFavorite;
         public RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Inisialisasi tidak berubah
             imageViewRecipe = itemView.findViewById(R.id.imageViewRecipe);
             textViewTitle = itemView.findViewById(R.id.textViewRecipeTitle);
             buttonFavorite = itemView.findViewById(R.id.buttonFavorite);

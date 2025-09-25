@@ -77,12 +77,12 @@ class SearchFragment : Fragment() {
 
     private fun searchForRecipes(ingredients: String) {
         // SEMBUNYIKAN Wajah #1 (Form Pencarian)
-        binding.scrollView.visibility = View.GONE
-        binding.buttonSearch.visibility = View.GONE
-
-        // TAMPILKAN Wajah #2 (Hasil Pencarian)
+        binding.searchFormContainer.visibility = View.GONE
         binding.resultsContainer.visibility = View.VISIBLE
-        binding.progressBarSearch.visibility = View.VISIBLE
+
+        binding.shimmerLayout.visibility = View.VISIBLE
+        binding.shimmerLayout.startShimmer()
+        binding.recyclerViewSearchResults.visibility = View.GONE
 
         val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
         val call = apiService.searchRecipesComplex(
@@ -96,7 +96,10 @@ class SearchFragment : Fragment() {
                 call: Call<ComplexSearchResponse>,
                 response: Response<ComplexSearchResponse>
             ) {
-                binding.progressBarSearch.visibility = View.GONE
+                binding.shimmerLayout.stopShimmer()
+                binding.shimmerLayout.visibility = View.GONE
+                // Tampilkan RecyclerView asli
+                binding.recyclerViewSearchResults.visibility = View.VISIBLE
                 if (response.isSuccessful && response.body() != null) {
                     // TIDAK PERLU .map LAGI, LANGSUNG PASSING HASILNYA
                     recipeAdapter.updateRecipes(response.body()!!.results)
@@ -106,6 +109,8 @@ class SearchFragment : Fragment() {
             }
             override fun onFailure(call: Call<ComplexSearchResponse>, t: Throwable) {
                 // ... (handle error)
+                binding.shimmerLayout.stopShimmer()
+                binding.shimmerLayout.visibility = View.GONE
             }
         })
     }
@@ -113,11 +118,9 @@ class SearchFragment : Fragment() {
     // Fungsi untuk kembali ke form pencarian
     private fun showSearchForm() {
         // TAMPILKAN KEMBALI Wajah #1
-        binding.scrollView.visibility = View.VISIBLE
-        binding.buttonSearch.visibility = View.VISIBLE
-        // SEMBUNYIKAN Wajah #2
         binding.resultsContainer.visibility = View.GONE
-        // Kosongkan hasil resep sebelumnya
+        binding.searchFormContainer.visibility = View.VISIBLE
+
         recipeAdapter.updateRecipes(emptyList())
         loadAndDisplayRecentSearches()
     }

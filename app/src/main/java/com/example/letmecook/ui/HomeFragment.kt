@@ -74,10 +74,23 @@ class HomeFragment : Fragment() {
         homeViewModel.recommendedRecipes.observe(viewLifecycleOwner) { recipes ->
             recommendedRecipeAdapter.updateRecipes(recipes)
         }
+
         homeViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBarRecommended.visibility = if (isLoading) View.VISIBLE else View.GONE
+            if (isLoading) {
+                binding.recyclerViewRecommended.visibility = View.GONE
+                binding.shimmerLayoutRecommended.visibility = View.VISIBLE
+                binding.shimmerLayoutRecommended.startShimmer()
+            } else {
+                binding.shimmerLayoutRecommended.stopShimmer()
+                binding.shimmerLayoutRecommended.visibility = View.GONE
+                binding.recyclerViewRecommended.visibility = View.VISIBLE
+            }
         }
+
         homeViewModel.error.observe(viewLifecycleOwner) { errorMessage ->
+            // Sembunyikan shimmer jika terjadi error
+            binding.shimmerLayoutRecommended.stopShimmer()
+            binding.shimmerLayoutRecommended.visibility = View.GONE
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
