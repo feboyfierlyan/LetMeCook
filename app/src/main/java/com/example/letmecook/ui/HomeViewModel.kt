@@ -34,7 +34,10 @@ class HomeViewModel : ViewModel() {
         val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
         val call = apiService.getRandomRecipes(BuildConfig.SPOONACULAR_API_KEY, 10)
 
+        // FIX: Pastikan blok "object : Callback" memiliki DUA FUNGSI (onResponse dan onFailure)
         call.enqueue(object : Callback<RandomRecipeResponse> {
+
+            // FUNGSI WAJIB PERTAMA
             override fun onResponse(
                 call: Call<RandomRecipeResponse>,
                 response: Response<RandomRecipeResponse>
@@ -47,6 +50,7 @@ class HomeViewModel : ViewModel() {
                 }
             }
 
+            // FUNGSI WAJIB KEDUA
             override fun onFailure(call: Call<RandomRecipeResponse>, t: Throwable) {
                 _isLoading.value = false
                 _error.value = "Network Error: ${t.message}"

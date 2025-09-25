@@ -1,13 +1,9 @@
 package com.example.letmecook.api;
 
-import com.example.letmecook.model.ComplexSearchResponse;
-import com.example.letmecook.model.RecipeByIngredientResponse;
-import com.example.letmecook.model.RecipeDetailsResponse;
-
-import com.example.letmecook.model.RandomRecipeResponse;
-
 import com.example.letmecook.model.AutocompleteResult;
-
+import com.example.letmecook.model.ComplexSearchResponse;
+import com.example.letmecook.model.RandomRecipeResponse;
+import com.example.letmecook.model.RecipeDetailsResponse;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -16,30 +12,27 @@ import retrofit2.http.Query;
 
 public interface SpoonacularApi {
 
-    @GET("recipes/findByIngredients")
-    Call<List<RecipeByIngredientResponse>> searchRecipesByIngredients(
+    @GET("recipes/complexSearch")
+    Call<ComplexSearchResponse> searchRecipesComplex(
             @Query("apiKey") String apiKey,
-            @Query("ingredients") String ingredients,
+            @Query("includeIngredients") String ingredients,
+            @Query("addRecipeInformation") boolean addInfo,
             @Query("number") int number
     );
 
-    @GET("recipes/{id}/information")
-    Call<RecipeDetailsResponse> getRecipeDetails(
-            @Path("id") int id,
-            @Query("apiKey") String apiKey
-    );
+    // PASTIKAN FUNGSI INI MEMILIKI 4 PARAMETER
     @GET("recipes/complexSearch")
-
     Call<ComplexSearchResponse> searchRecipesByCuisine(
             @Query("apiKey") String apiKey,
             @Query("cuisine") String cuisine,
+            @Query("addRecipeInformation") boolean addInfo, // Parameter ini yang hilang
             @Query("number") int number
     );
 
     @GET("recipes/random")
     Call<RandomRecipeResponse> getRandomRecipes(
             @Query("apiKey") String apiKey,
-            @Query("number") int number // Jumlah resep yang ingin didapat
+            @Query("number") int number
     );
 
     @GET("food/ingredients/autocomplete")
@@ -47,5 +40,11 @@ public interface SpoonacularApi {
             @Query("apiKey") String apiKey,
             @Query("query") String query,
             @Query("number") int number
+    );
+
+    @GET("recipes/{id}/information")
+    Call<RecipeDetailsResponse> getRecipeDetails(
+            @Path("id") int id,
+            @Query("apiKey") String apiKey
     );
 }

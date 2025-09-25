@@ -15,7 +15,6 @@ import com.example.letmecook.api.SpoonacularApi
 import com.example.letmecook.databinding.FragmentRecipeListBinding
 // IMPORT PENTING: Pastikan baris-baris ini ada dan tidak error
 import com.example.letmecook.model.ComplexSearchResponse
-import com.example.letmecook.model.RecipeByIngredientResponse
 // ---
 import retrofit2.Call
 import retrofit2.Callback
@@ -71,25 +70,26 @@ class RecipeListFragment : Fragment() {
     private fun fetchRecipesByCuisine(cuisine: String) {
         binding.progressBar.visibility = View.VISIBLE
         val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
-        val call = apiService.searchRecipesByCuisine(BuildConfig.SPOONACULAR_API_KEY, cuisine, 20)
+        val call = apiService.searchRecipesByCuisine(
+            BuildConfig.SPOONACULAR_API_KEY,
+            cuisine,
+            true,
+            20
+        )
 
         call.enqueue(object : Callback<ComplexSearchResponse> {
             override fun onResponse(call: Call<ComplexSearchResponse>, response: Response<ComplexSearchResponse>) {
                 binding.progressBar.visibility = View.GONE
                 if (response.isSuccessful && response.body() != null) {
-                    val searchResults = response.body()!!.results
-                    val recipes = searchResults.map { result ->
-                        RecipeByIngredientResponse(result.id, result.title, result.image)
-                    }
-                    recipeAdapter.updateRecipes(recipes)
+                    // TIDAK PERLU .map LAGI, LANGSUNG PASSING HASILNYA
+                    recipeAdapter.updateRecipes(response.body()!!.results)
                 } else {
                     Toast.makeText(context, "Failed to fetch recipes.", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onFailure(call: Call<ComplexSearchResponse>, t: Throwable) {
-                binding.progressBar.visibility = View.GONE
-                Toast.makeText(context, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                // ... (handle error)
             }
         })
     }

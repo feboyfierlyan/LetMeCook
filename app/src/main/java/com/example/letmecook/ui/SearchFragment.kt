@@ -20,7 +20,7 @@ import com.example.letmecook.api.ApiClient
 import com.example.letmecook.api.SpoonacularApi
 import com.example.letmecook.databinding.FragmentSearchBinding
 import com.example.letmecook.model.AutocompleteResult
-import com.example.letmecook.model.RecipeByIngredientResponse
+import com.example.letmecook.model.ComplexSearchResponse
 import com.example.letmecook.util.SearchHistoryManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -85,24 +85,27 @@ class SearchFragment : Fragment() {
         binding.progressBarSearch.visibility = View.VISIBLE
 
         val apiService = ApiClient.getClient().create(SpoonacularApi::class.java)
-        val call = apiService.searchRecipesByIngredients(
-            BuildConfig.SPOONACULAR_API_KEY, ingredients, 20
+        val call = apiService.searchRecipesComplex(
+            BuildConfig.SPOONACULAR_API_KEY,
+            ingredients,
+            true, // Minta informasi tambahan seperti rating
+            20
         )
-        call.enqueue(object : Callback<List<RecipeByIngredientResponse>> {
+        call.enqueue(object : Callback<ComplexSearchResponse> {
             override fun onResponse(
-                call: Call<List<RecipeByIngredientResponse>>,
-                response: Response<List<RecipeByIngredientResponse>>
+                call: Call<ComplexSearchResponse>,
+                response: Response<ComplexSearchResponse>
             ) {
                 binding.progressBarSearch.visibility = View.GONE
-                if (response.isSuccessful && response.body() != null && !response.body()!!.isEmpty()) {
-                    recipeAdapter.updateRecipes(response.body())
+                if (response.isSuccessful && response.body() != null) {
+                    // TIDAK PERLU .map LAGI, LANGSUNG PASSING HASILNYA
+                    recipeAdapter.updateRecipes(response.body()!!.results)
                 } else {
-                    Toast.makeText(requireContext(), "No recipes found. Try different ingredients.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "No recipes found.", Toast.LENGTH_LONG).show()
                 }
             }
-            override fun onFailure(call: Call<List<RecipeByIngredientResponse>>, t: Throwable) {
-                binding.progressBarSearch.visibility = View.GONE
-                Toast.makeText(requireContext(), "Network Error: " + t.message, Toast.LENGTH_LONG).show()
+            override fun onFailure(call: Call<ComplexSearchResponse>, t: Throwable) {
+                // ... (handle error)
             }
         })
     }
